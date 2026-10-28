@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قارئ NFC</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; text-align: center; background-color: #f0f2f5; }
+        #scan-btn { padding: 1rem 2rem; font-size: 1.2rem; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        #scan-btn:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #log { margin-top: 2rem; padding: 1rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; text-align: right; min-height: 100px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>قارئ علامات NFC</h1>
+    <p>اضغط على الزر ثم قم بلمس علامة NFC بجهازك.</p>
+    <button id="scan-btn">بدء المسح</button>
+    <div id="log">ستظهر النتائج هنا...</div>
+
+    <script>
+        const scanBtn = document.getElementById('scan-btn');
+        const logDiv = document.getElementById('log');
+
+        // التحقق من دعم المتصفح لـ Web NFC
+        if (!("NDEFReader" in window)) {
+            logDiv.textContent = "عذرًا، متصفحك لا يدعم Web NFC. يرجى استخدام Chrome على Android.";
+            scanBtn.disabled = true;
+        }
+
+        scanBtn.addEventListener('click', async () => {
+            try {
+                const ndef = new NDEFReader();
+                await ndef.scan();
+                logDiv.textContent = "✅ تم بدء المسح. الرجاء لمس علامة NFC بجهازك...";
+                scanBtn.disabled = true;
+
+                ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                    let output = `تمت قراءة علامة NFC\nالرقم التسلسلي: ${serialNumber}\n\n`;
+                    
+                    for (const record of message.records) {
+                        output += `نوع السجل: ${record.recordType}\n`;
+                        
+                        // التمييز بناءً على نوع السجل
+                        switch (record.recordType) {
+                            case "url":
+                                const urlDecoder = new TextDecoder(record.encoding);
+                                const url = urlDecoder.decode(record.data);
+                                output += `🔗 هذا رابط (URL): ${url}\n`;
+                                break;
+                            case "text":
+                                const textDecoder = new TextDecoder(record.encoding);
+                                const text = textDecoder.decode(record.data);
+                                output += `📝 هذا نص: ${text}\n`;
+                                break;
+                            case "mime":
+                                output += `📎 نوع MIME: ${record.mediaType}\n`;
+                                break;
+                            case "smart-poster":
+                                output += `🖼️ هذا ملصق ذكي (Smart Poster)\n`;
+                                break;
+                            case "absolute-url":
+                                output += `🔗 هذا رابط مطلق (Absolute URL)\n`;
+                                break;
+                            case "empty":
+                                output += `📭 سجل فارغ\n`;
+                                break;
+                            default:
+                                output += `❓ نوع آخر: ${record.recordType}\n`;
+                        }
+                        output += "---\n";
+                    }
+                    logDiv.textContent = output;
+                    scanBtn.disabled = false; // إعادة تفعيل الزر لمسح علامة أخرى
+                });
+
+                ndef.addEventListener("readingerror", () => {
+                    logDiv.textContent = "❌ حدث خطأ أثناء قراءة العلامة. قد تكون غير مدعومة أو تالفة.";
+                    scanBtn.disabled = false;
+                });
+
+            } catch (error) {
+                logDiv.textContent = `❌ فشل بدء المسح: ${error}`;
+                scanBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
