@@ -1,88 +1,453 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قارئ NFC</title>
+    <title>NFC Reader - TRL TEAM</title>
     <style>
-        body { font-family: sans-serif; padding: 2rem; text-align: center; background-color: #f0f2f5; }
-        #scan-btn { padding: 1rem 2rem; font-size: 1.2rem; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        #scan-btn:disabled { background-color: #6c757d; cursor: not-allowed; }
-        #log { margin-top: 2rem; padding: 1rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; text-align: right; min-height: 100px; white-space: pre-wrap; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #212121;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* --- شاشة التحميل (Loader) --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #212121;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #424242;
+            border-top: 4px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loader h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        #loader p {
+            font-size: 0.9rem;
+            color: #bdbdbd;
+        }
+
+        /* --- محتوى الموقع --- */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            border: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        #lang-btn {
+            background: none;
+            border: 1px solid #bdbdbd;
+            color: #616161;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        #lang-btn:hover {
+            background-color: #f5f5f5;
+            color: #212121;
+            border-color: #212121;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #000000;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #757575;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        #scan-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background-color: #212121;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 1.5rem;
+        }
+
+        #scan-btn:hover:not(:disabled) {
+            background-color: #424242;
+        }
+
+        #scan-btn:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+
+        #status {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #616161;
+            margin-bottom: 1rem;
+            min-height: 1.2rem;
+        }
+
+        #result-card {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: start;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 0.95rem;
+            min-height: 80px;
+            color: #212121;
+            margin-bottom: 1.5rem;
+        }
+
+        #result-card.error {
+            border-color: #e57373;
+            background-color: #ffebee;
+            color: #b71c1c;
+        }
+
+        #result-card.bank {
+            border-color: #ffb74d;
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        #result-card.success {
+            border-color: #81c784;
+            background-color: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .warning {
+            font-size: 0.8rem;
+            color: #757575;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding-top: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #9e9e9e;
+        }
+
+        .footer strong {
+            color: #616161;
+        }
     </style>
 </head>
 <body>
-    <h1>قارئ علامات NFC</h1>
-    <p>اضغط على الزر ثم قم بلمس علامة NFC بجهازك.</p>
-    <button id="scan-btn">بدء المسح</button>
-    <div id="log">ستظهر النتائج هنا...</div>
+
+    <!-- شاشة التحميل -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <h2>TRL TEAM FOR DEVELOPMENT</h2>
+        <p>for leader Taimdev9</p>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="container">
+        <div class="top-bar">
+            <button id="lang-btn">العربية</button>
+        </div>
+
+        <h1 id="title">NFC Reader</h1>
+        <p class="subtitle" id="subtitle">Press the button and touch an NFC tag</p>
+        
+        <button id="scan-btn" data-i18n="scanBtn">Start Scan</button>
+        <div id="status" data-i18n="statusReady">Ready to scan</div>
+        <div id="result-card" data-i18n="resultInit">Results will appear here...</div>
+        
+        <div class="warning" id="warningText">
+            ⚠️ This site does not read sensitive bank card data, it only detects if the card supports NDEF.
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>TRL TEAM FOR DEVELOPMENT</strong><br>
+        for leader <strong>Taimdev9</strong>
+    </div>
 
     <script>
-        const scanBtn = document.getElementById('scan-btn');
-        const logDiv = document.getElementById('log');
+        // --- 1. نظام اللغات (i18n) ---
+        const translations = {
+            en: {
+                langBtn: "العربية",
+                title: "NFC Reader",
+                subtitle: "Press the button and touch an NFC tag",
+                scanBtn: "Start Scan",
+                statusReady: "Ready to scan",
+                statusScanning: "✅ Scanning... Place tag on the back of the phone",
+                statusSuccess: "Read successfully. Tap to scan again.",
+                statusError: "Error occurred. Try again.",
+                resultInit: "Results will appear here...",
+                warningText: "⚠️ This site does not read sensitive bank card data, it only detects if the card supports NDEF.",
+                browserNotSupported: "Browser does not support Web NFC. Use Chrome on Android.",
+                waitingTag: "Waiting for NFC tag...",
+                readSuccess: "NFC tag detected\nSerial Number: ",
+                serialUnavailable: "Unavailable",
+                typeLabel: "Record Type: ",
+                url: "🔗 URL: ",
+                text: "📝 Text: ",
+                mime: "📎 MIME Type: ",
+                smartPoster: "🖼️ Smart Poster",
+                absoluteUrl: "🔗 Absolute URL",
+                empty: "📭 Empty Record",
+                unknownType: "❓ Unknown Type: ",
+                readError: "⚠️ Error reading record",
+                noNdef: "\n🔍 No valid NDEF data found.\n",
+                likelyBank: "💳 This is likely a bank card, ID card, or smart card that doesn't support NDEF.\n",
+                sensitiveData: "🔒 Sensitive information cannot be read via the browser.\n",
+                errorRead: "❌ Failed to read tag.\n💳 It might be a bank card or smart card not using NDEF format.\n🔒 The browser cannot access its data.\n✅ Try a dedicated NFC tag (like NTAG213) to read URLs and text.",
+                permissionError: "Failed to start scan. Please grant permission.",
+                startError: "Failed to start scan: "
+            },
+            ar: {
+                langBtn: "English",
+                title: "قارئ NFC",
+                subtitle: "اضغط على الزر وقم بلمس علامة NFC",
+                scanBtn: "بدء المسح",
+                statusReady: "جاهز للمسح",
+                statusScanning: "✅ جاري المسح... ضع العلامة على ظهر الهاتف",
+                statusSuccess: "تمت القراءة بنجاح. اضغط للمسح مرة أخرى.",
+                statusError: "حدث خطأ. يمكنك المحاولة مرة أخرى.",
+                resultInit: "ستظهر النتائج هنا...",
+                warningText: "⚠️ هذا الموقع لا يقرأ بيانات البطاقات البنكية الحساسة، بل يكتشف فقط ما إذا كانت البطاقة تدعم تقنية NDEF أم لا.",
+                browserNotSupported: "متصفحك لا يدعم Web NFC. استخدم Chrome على Android.",
+                waitingTag: "في انتظار لمس علامة NFC...",
+                readSuccess: "تم اكتشاف علامة NFC\nالرقم التسلسلي: ",
+                serialUnavailable: "غير متاح",
+                typeLabel: "نوع السجل: ",
+                url: "🔗 رابط: ",
+                text: "📝 نص: ",
+                mime: "📎 نوع MIME: ",
+                smartPoster: "🖼️ ملصق ذكي (Smart Poster)",
+                absoluteUrl: "🔗 رابط مطلق",
+                empty: "📭 سجل فارغ",
+                unknownType: "❓ نوع غير معروف: ",
+                readError: "⚠️ خطأ في قراءة السجل",
+                noNdef: "\n🔍 لم يتم العثور على بيانات NDEF صالحة.\n",
+                likelyBank: "💳 من المحتمل أن تكون هذه بطاقة بنك أو بطاقة هوية أو بطاقة ذكية لا تدعم NDEF.\n",
+                sensitiveData: "🔒 لا يمكن قراءة معلوماتها الحساسة عبر المتصفح.\n",
+                errorRead: "❌ فشلت قراءة العلامة.\n💳 من المحتمل أن تكون هذه بطاقة بنك أو بطاقة ذكية لا تستخدم تنسيق NDEF.\n🔒 لا يمكن للمتصفح الوصول إلى بياناتها.\n✅ جرب علامة NFC مخصصة (مثل NTAG213) لقراءة الروابط والنصوص.",
+                permissionError: "تعذر بدء المسح. تأكد من منح الإذن.",
+                startError: "فشل بدء المسح: "
+            }
+        };
 
-        // التحقق من دعم المتصفح لـ Web NFC
-        if (!("NDEFReader" in window)) {
-            logDiv.textContent = "عذرًا، متصفحك لا يدعم Web NFC. يرجى استخدام Chrome على Android.";
-            scanBtn.disabled = true;
+        let currentLang = 'en'; // اللغة الافتراضية
+
+        // دالة تحديث نصوص الموقع بناءً على اللغة
+        function updateLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+            const t = translations[lang];
+            
+            document.getElementById('lang-btn').textContent = t.langBtn;
+            document.getElementById('title').textContent = t.title;
+            document.getElementById('subtitle').textContent = t.subtitle;
+            document.getElementById('scan-btn').textContent = t.scanBtn;
+            document.getElementById('warningText').textContent = t.warningText;
+
+            // تحديث الحالة فقط إذا كانت لا تزال في الوضع الافتراضي
+            const statusDiv = document.getElementById('status');
+            if (statusDiv.dataset.i18n === 'statusReady' || statusDiv.dataset.i18n === 'statusSuccess' || statusDiv.dataset.i18n === 'statusError') {
+                statusDiv.textContent = t.statusReady;
+            }
+
+            // تحديث بطاقة النتائج إذا كانت لا تزال في الوضع الافتراضي
+            const resultCard = document.getElementById('result-card');
+            if (resultCard.dataset.i18n === 'resultInit') {
+                resultCard.textContent = t.resultInit;
+            }
         }
 
-        scanBtn.addEventListener('click', async () => {
-            try {
-                const ndef = new NDEFReader();
-                await ndef.scan();
-                logDiv.textContent = "✅ تم بدء المسح. الرجاء لمس علامة NFC بجهازك...";
-                scanBtn.disabled = true;
-
-                ndef.addEventListener("reading", ({ message, serialNumber }) => {
-                    let output = `تمت قراءة علامة NFC\nالرقم التسلسلي: ${serialNumber}\n\n`;
-                    
-                    for (const record of message.records) {
-                        output += `نوع السجل: ${record.recordType}\n`;
-                        
-                        // التمييز بناءً على نوع السجل
-                        switch (record.recordType) {
-                            case "url":
-                                const urlDecoder = new TextDecoder(record.encoding);
-                                const url = urlDecoder.decode(record.data);
-                                output += `🔗 هذا رابط (URL): ${url}\n`;
-                                break;
-                            case "text":
-                                const textDecoder = new TextDecoder(record.encoding);
-                                const text = textDecoder.decode(record.data);
-                                output += `📝 هذا نص: ${text}\n`;
-                                break;
-                            case "mime":
-                                output += `📎 نوع MIME: ${record.mediaType}\n`;
-                                break;
-                            case "smart-poster":
-                                output += `🖼️ هذا ملصق ذكي (Smart Poster)\n`;
-                                break;
-                            case "absolute-url":
-                                output += `🔗 هذا رابط مطلق (Absolute URL)\n`;
-                                break;
-                            case "empty":
-                                output += `📭 سجل فارغ\n`;
-                                break;
-                            default:
-                                output += `❓ نوع آخر: ${record.recordType}\n`;
-                        }
-                        output += "---\n";
-                    }
-                    logDiv.textContent = output;
-                    scanBtn.disabled = false; // إعادة تفعيل الزر لمسح علامة أخرى
-                });
-
-                ndef.addEventListener("readingerror", () => {
-                    logDiv.textContent = "❌ حدث خطأ أثناء قراءة العلامة. قد تكون غير مدعومة أو تالفة.";
-                    scanBtn.disabled = false;
-                });
-
-            } catch (error) {
-                logDiv.textContent = `❌ فشل بدء المسح: ${error}`;
-                scanBtn.disabled = false;
-            }
+        // زر تبديل اللغة
+        document.getElementById('lang-btn').addEventListener('click', () => {
+            const newLang = currentLang === 'en' ? 'ar' : 'en';
+            updateLanguage(newLang);
         });
+
+        // إخفاء شاشة التحميل
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 1500); // انتظار ثانية ونصف لرؤية اسم الفريق
+        });
+
+        // --- 2. نظام قراءة NFC ---
+        const scanBtn = document.getElementById('scan-btn');
+        const statusDiv = document.getElementById('status');
+        const resultCard = document.getElementById('result-card');
+
+        function resetUI() {
+            scanBtn.disabled = false;
+            statusDiv.textContent = translations[currentLang].statusReady;
+            statusDiv.dataset.i18n = 'statusReady';
+        }
+
+        function showResult(message, type = '') {
+            resultCard.textContent = message;
+            resultCard.className = type;
+            resultCard.dataset.i18n = ''; // إزالة وسم الترجمة الافتراضي
+        }
+
+        if (!("NDEFReader" in window)) {
+            statusDiv.textContent = translations[currentLang].browserNotSupported;
+            scanBtn.disabled = true;
+            showResult(translations[currentLang].browserNotSupported, "error");
+        } else {
+            scanBtn.addEventListener('click', async () => {
+                const t = translations[currentLang];
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    
+                    statusDiv.textContent = t.statusScanning;
+                    statusDiv.dataset.i18n = '';
+                    scanBtn.disabled = true;
+                    showResult(t.waitingTag);
+
+                    ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                        let output = t.readSuccess + `${serialNumber || t.serialUnavailable}\n\n`;
+                        
+                        let isBankCard = false;
+                        let hasNDEF = false;
+
+                        for (const record of message.records) {
+                            hasNDEF = true;
+                            output += t.typeLabel + `${record.recordType}\n`;
+                            
+                            try {
+                                switch (record.recordType) {
+                                    case "url":
+                                        const urlDecoder = new TextDecoder(record.encoding);
+                                        output += t.url + urlDecoder.decode(record.data) + "\n";
+                                        break;
+                                    case "text":
+                                        const textDecoder = new TextDecoder(record.encoding);
+                                        output += t.text + textDecoder.decode(record.data) + "\n";
+                                        break;
+                                    case "mime":
+                                        output += t.mime + (record.mediaType || 'Unknown') + "\n";
+                                        break;
+                                    case "smart-poster":
+                                        output += t.smartPoster + "\n";
+                                        break;
+                                    case "absolute-url":
+                                        output += t.absoluteUrl + "\n";
+                                        break;
+                                    case "empty":
+                                        output += t.empty + "\n";
+                                        break;
+                                    default:
+                                        output += t.unknownType + record.recordType + "\n";
+                                }
+                            } catch (e) {
+                                output += t.readError + "\n";
+                            }
+                            output += "---\n";
+                        }
+
+                        if (!hasNDEF) {
+                            isBankCard = true;
+                            output += t.noNdef + t.likelyBank + t.sensitiveData;
+                        }
+
+                        if (isBankCard) {
+                            showResult(output, 'bank');
+                        } else {
+                            showResult(output, 'success');
+                        }
+                        statusDiv.textContent = t.statusSuccess;
+                        scanBtn.disabled = false;
+                    });
+
+                    ndef.addEventListener("readingerror", () => {
+                        const msg = translations[currentLang].errorRead;
+                        showResult(msg, 'bank');
+                        statusDiv.textContent = translations[currentLang].statusError;
+                        scanBtn.disabled = false;
+                    });
+
+                } catch (error) {
+                    statusDiv.textContent = `${t.startError} ${error}`;
+                    showResult(t.permissionError, "error");
+                    scanBtn.disabled = false;
+                }
+            });
+        }
     </script>
 </body>
 </html>
