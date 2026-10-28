@@ -1,6 +1,8 @@
+
+```markdown
 <div align="center">
 
-# 📡 NFC Web Reader & Logger
+# 📡 TRL NFC Pro
 
 ### By TRL TEAM FOR DEVELOPMENT
 
@@ -10,7 +12,7 @@
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Web NFC](https://img.shields.io/badge/Web_NFC-API-blue?style=for-the-badge)](https://w3c.github.io/web-nfc/)
 
-**A lightweight, bilingual, browser-based NFC tag reader with real-time Cloud logging via Firebase.**
+**A comprehensive, bilingual, cloud-connected NFC Reader & Writer application.**
 
 </div>
 
@@ -19,45 +21,53 @@
 ## 🇬🇧 English Documentation
 
 ### 📖 About The Project
-**NFC Web Reader & Logger** is a powerful single-file web application developed by **TRL TEAM FOR DEVELOPMENT**. It utilizes the **Web NFC API** to scan and decode NFC tags directly through the browser, eliminating the need for a native mobile application.
+**TRL NFC Pro** is an advanced, single-file web application developed by **TRL TEAM FOR DEVELOPMENT**. It leverages the **Web NFC API** to scan, decode, and write NFC tags directly through the mobile browser, completely eliminating the need for native mobile apps.
 
-The application is designed to parse standard **NDEF** records and features a smart detection mechanism that alerts users when an unsupported card (like a bank card) is scanned. Furthermore, every scan is securely logged in real-time to a **Firebase Firestore** database for monitoring and analytics.
+The application logs every interaction (read or write) securely to a **Firebase Firestore** database, capturing real-time data including timestamps and geolocation. It also features a built-in, secure Admin Dashboard to review the collected data.
 
 ### ✨ Key Features
-- **Real-time Cloud Logging:** Sends scan data (Serial Number, Type, Decoded Content, Timestamp) directly to Firebase Firestore.
-- **Bilingual Support:** Seamlessly switch between English (Default) and Arabic with full RTL/LTR layout support.
-- **Smart Detection:** Decodes URLs, Text, MIME types, and distinguishes between standard NDEF tags and encrypted smart cards (e.g., Bank Cards).
-- **Sleek UI/UX:** Minimalist black, white, and gray design with a professional loading screen.
-- **Single File Architecture:** HTML, CSS, and JS are bundled into one `index.html` file for easy deployment.
+- **NFC Reader:** Decodes standard NDEF records (URLs, Text, MIME types) and intelligently detects unsupported cards (like bank cards) to protect sensitive data.
+- **NFC Writer:** Allows users to write custom URLs or Text directly to empty NFC tags (e.g., NTAG213).
+- **Cloud Logging:** Automatically sends scan/write data to Firebase Firestore.
+- **Geolocation Tagging:** Captures the user's approximate location (Latitude/Longitude) upon scanning (requires user permission).
+- **Audio & Haptic Feedback:** Plays a beep and vibrates the device upon a successful action.
+- **Admin Dashboard:** A built-in, password-protected control panel to view all logged data directly from the web interface.
+- **PWA Ready:** Can be installed on the home screen as a standalone Progressive Web App.
+- **Bilingual:** Full support for English and Arabic with RTL/LTR switching.
 
 ### ⚙️ Prerequisites & Limitations
 > **Important:** Web NFC is currently a working draft and has strict limitations:
 - **Device:** Must be an **Android** device with NFC hardware.
 - **Browser:** Requires **Google Chrome** (or Chromium-based browsers). It is **NOT** supported on iOS (Safari) or Desktop browsers.
-- **Security:** The website **MUST** be served over **HTTPS** (e.g., GitHub Pages, Vercel, Netlify).
+- **Security:** The website **MUST** be served over **HTTPS**.
+- **Privacy:** The API is strictly blocked from reading encrypted financial data (Bank Cards).
 
 ### 🚀 How to Deploy
-1. Clone the repository or copy the `index.html` file.
-2. Ensure your Firebase project is set up and Firestore is enabled in **Test Mode** (or configure proper Security Rules).
-3. Update the `firebaseConfig` object in the `<script type="module">` tag with your own Firebase project credentials.
-4. Host the file on a secure HTTPS server (like GitHub Pages).
-5. Open the link on an Android device using Chrome.
+1. Clone the repository or download the `index.html` file.
+2. Create a project on **Firebase Console** and enable **Firestore Database**.
+3. Obtain your Firebase configuration keys and replace the placeholder `firebaseConfig` object in the code.
+4. Set up the Firestore Security Rules (provided below).
+5. Host the file on a secure HTTPS server (like GitHub Pages, Vercel, or Netlify).
+6. Open the link on an Android device using Chrome.
 
 ---
 
 ## 🇸🇦 التوثيق العربي
 
 ### 📖 عن المشروع
-**قارئ ومسجل NFC عبر الويب** هو تطبيق ويب متكامل بملف واحد تم تطويره بواسطة **فريق TRL للتطوير (TRL TEAM FOR DEVELOPMENT)**. يعتمد التطبيق على **Web NFC API** لمسح وقراءة علامات NFC مباشرة من خلال المتصفح، بالإضافة إلى الربط مع قاعدة بيانات **Firebase Firestore** لتسجيل كل عملية مسح في السحابة بشكل فوري.
+**TRL NFC Pro** هو تطبيق ويب متكامل ومتقدم بملف واحد، تم تطويره بواسطة **فريق TRL للتطوير (TRL TEAM FOR DEVELOPMENT)**. يعتمد التطبيق على **Web NFC API** لمسح وقراءة وكتابة علامات NFC مباشرة من خلال متصفح الهاتف، مما يغني عن استخدام تطبيقات أخرى.
 
-صُمم التطبيق لتحليل سجلات **NDEF** القياسية، ويتميز بآلية ذكية للتنبيه عند محاولة قراءة بطاقة غير مدعومة (مثل البطاقات البنكية). يتم إرسال بيانات كل مسح (الرقم التسلسلي، نوع البطاقة، البيانات المستخرجة، ووقت المسح) إلى قاعدة البيانات لمراقبتها وتحليلها.
+يقوم التطبيق بتسجيل كل عملية (قراءة أو كتابة) في قاعدة بيانات **Firebase Firestore** السحابية، مع حفظ الوقت وتاريخ العملية والموقع الجغرافي التقريبي. كما يتميز بوجود لوحة تحكم سرية (Admin Dashboard) لمطور التطبيق لمراجعة البيانات.
 
 ### ✨ المميزات الرئيسية
-- **تسجيل سحابي فوري:** إرسال بيانات المسح مباشرة إلى قاعدة بيانات Firebase Firestore.
-- **دعم اللغتين:** التبديل بسلاسة بين اللغتين الإنجليزية (الافتراضية) والعربية مع دعم كامل لاتجاه النص (RTL/LTR).
-- **اكتشاف ذكي:** قراءة وتحليل الروابط، النصوص، وأنواع MIME، مع التمييز بين علامات NDEF والبطاقات الذكية المشفرة (مثل البطاقات البنكية).
-- **تصميم عصري:** واجهة مستخدم بسيطة (أبيض، أسود، رمادي) مع شاشة تحميل احترافية تحمل اسم الفريق.
-- **ملف واحد:** الكود بالكامل (HTML, CSS, JS) موجود في ملف `index.html` واحد لسهولة النشر.
+- **قارئ NFC:** يقرأ سجلات NDEF القياسية (روابط، نصوص، وأنواع MIME) ويكتشف البطاقات غير المدعومة (مثل البطاقات البنكية) لحماية الخصوصية.
+- **كاتب NFC:** يسمح للمستخدم بكتابة روابط أو نصوص مخصصة على علامات NFC الفارغة.
+- **تسجيل سحابي:** إرسال بيانات المسح والكتابة تلقائياً إلى قاعدة بيانات Firebase.
+- **الموقع الجغرافي:** يلتقط إحداثيات (خط الطول والعرض) عند المسح (بعد إذن المستخدم).
+- **تفاعل حسي:** إصدار صوت "بيب" واهتزاز الهاتف عند نجاح العملية.
+- **لوحة تحكم (Admin):** واجهة محمية بكلمة مرور لمطور التطبيق لاستعراض جميع البيانات المسجلة.
+- **تطبيق ويب (PWA):** قابل للتثبيت على الشاشة الرئيسية ويعمل كتطبيق مستقل.
+- **دعم اللغتين:** تبديل سلس بين العربية والإنجليزية مع دعم اتجاه النص (RTL/LTR).
 
 ### ⚙️ المتطلبات والقيود
 > **تنبيه هام:** تقنية Web NFC لا تزال في مرحلة المسودة، ولها قيود صارمة:
@@ -65,21 +75,43 @@ The application is designed to parse standard **NDEF** records and features a sm
 - **المتصفح:** يتطلب متصفح **Google Chrome**. **لا يدعم** أجهزة iOS أو متصفحات الكمبيوتر.
 - **الأمان:** يجب استضافة الموقع على خادم يدعم **HTTPS**.
 
-### 🚀 كيفية النشر والاستخدام
+### 🚀 كيفية النشر
 1. قم بنسخ كود `index.html` إلى مستودعك.
-2. تأكد من إنشاء مشروع في Firebase وتفعيل Firestore (في وضع الاختبار).
-3. ضع إعدادات مشروعك في الكائن `firebaseConfig` الموجود داخل الكود.
-4. ارفع الملف على استضافة تدعم HTTPS (مثل GitHub Pages).
-5. افتح الرابط من هاتف أندرويد باستخدام متصفح Chrome.
+2. أنشئ مشروعاً في Firebase وفعل خدمة Firestore.
+3. ضع مفاتيحك الخاصة (Firebase Config) في الكود بدلاً من القيم الافتراضية.
+4. قم بتطبيق قواعد الحماية (Rules) الموضحة أدناه.
+5. ارفع الملف على استضافة تدعم HTTPS (مثل GitHub Pages).
+6. افتح الرابط من هاتف أندرويد باستخدام متصفح Chrome.
 
 ---
 
-## 👨‍💻 Team & Credits
-- **Developed by:** TRL TEAM FOR DEVELOPMENT
-- **Team Leader:** Taimdev9
-- **Technologies:** HTML5, CSS3, JavaScript (ES6), Web NFC API, Firebase Firestore.
+## 🛡️ Firestore Security Rules
+
+To ensure the app works perfectly, apply these rules in your Firebase Console:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /nfc_scans/{document} {
+      allow create: if true; // Allow writing new logs
+      allow read: if true;   // Allow reading for the Admin Dashboard
+      allow update, delete: if false; // Prevent tampering
+    }
+  }
+}
+```
+
+---
+
+👨‍💻 Team & Credits
+
+· Developed by: TRL TEAM FOR DEVELOPMENT
+· Team Leader: Taimdev9
+· Technologies: HTML5, CSS3, JavaScript (ES6), Web NFC API, Firebase Firestore, PWA.
 
 <div align="center">
   <br>
   <i>Built with ❤️ by TRL TEAM</i>
 </div>
+```
