@@ -3,20 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRL NFC Pro - Taimdev9</title>
+    <title>TRL NFC Pro</title>
     
-    <!-- PWA Manifest (Inline) -->
-    <link rel="manifest" href='data:application/manifest+json,{"name":"TRL NFC Pro","short_name":"TRL NFC","start_url":".","display":"standalone","background_color":"#f5f5f5","theme_color":"#212121","icons":[{"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==","sizes":"192x192","type":"image/png"}]}'>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#212121">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-color: #f5f5f5; --text-color: #212121; --card-bg: #ffffff;
+            --border-color: #e0e0e0; --primary: #212121; --primary-text: #ffffff;
+            --success: #81c784; --success-bg: #e8f5e9; --success-text: #1b5e20;
+            --bank: #ffb74d; --bank-bg: #fff3e0; --bank-text: #e65100;
+            --error: #e57373; --error-bg: #ffebee; --error-text: #b71c1c;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --text-color: #e0e0e0; --card-bg: #1e1e1e;
+            --border-color: #333333; --primary: #ffffff; --primary-text: #121212;
+            --success-bg: #1b5e20; --success-text: #a5d6a7;
+            --bank-bg: #e65100; --bank-text: #ffe0b2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5; color: #212121;
+            background-color: var(--bg-color); color: var(--text-color);
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh; padding: 2rem 1rem; line-height: 1.6;
         }
+        
         /* Loader */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -25,147 +45,158 @@
             z-index: 9999; transition: opacity 0.5s ease-out, visibility 0.5s;
         }
         #loader.hidden { opacity: 0; visibility: hidden; }
-        .spinner {
-            width: 50px; height: 50px; border: 4px solid #424242;
-            border-top: 4px solid #ffffff; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
+        .spinner { width: 50px; height: 50px; border: 4px solid #424242; border-top: 4px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loader h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 5px; text-align: center; }
-        #loader p { font-size: 0.9rem; color: #bdbdbd; }
 
-        /* Main App */
         .container {
-            width: 100%; max-width: 600px; background-color: #ffffff;
-            border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 2rem; border: 1px solid #e0e0e0; position: relative;
+            width: 100%; max-width: 650px; background-color: var(--card-bg);
+            border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 2rem; border: 1px solid var(--border-color);
         }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;}
         .tabs { display: flex; gap: 10px; }
-        .tab-btn {
-            background: none; border: 1px solid #e0e0e0; color: #616161;
+        .tab-btn, .icon-btn {
+            background: none; border: 1px solid var(--border-color); color: var(--text-color);
             padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600;
         }
-        .tab-btn.active { background: #212121; color: #fff; border-color: #212121; }
-        #lang-btn {
-            background: none; border: 1px solid #bdbdbd; color: #616161;
-            padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600;
-        }
-        h1 { font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; color: #000000; }
-        .subtitle { text-align: center; color: #757575; font-size: 0.95rem; margin-bottom: 2rem; }
+        .tab-btn.active { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
         
-        /* Views */
+        h1 { font-size: 1.6rem; text-align: center; margin-bottom: 0.5rem; }
+        .subtitle { text-align: center; color: #757575; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        
         .view-section { display: none; }
         .view-section.active { display: block; }
 
-        /* Read View */
-        #scan-btn, #write-btn, #login-btn {
-            display: block; width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 600;
-            background-color: #212121; color: #ffffff; border: none; border-radius: 8px;
-            cursor: pointer; margin-bottom: 1.5rem;
+        /* Buttons & Inputs */
+        .action-btn {
+            display: block; width: 100%; padding: 0.8rem; font-size: 1rem; font-weight: 600;
+            background-color: var(--primary); color: var(--primary-text); border: none; border-radius: 8px;
+            cursor: pointer; margin-bottom: 1rem;
         }
-        #scan-btn:disabled { background-color: #bdbdbd; }
-        #status { text-align: center; font-size: 0.9rem; color: #616161; margin-bottom: 1rem; min-height: 1.2rem; }
-        #result-card {
-            background-color: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px;
-            padding: 1.5rem; text-align: start; white-space: pre-wrap; word-break: break-word;
-            font-size: 0.95rem; min-height: 80px;
-        }
-        #result-card.error { border-color: #e57373; background-color: #ffebee; color: #b71c1c; }
-        #result-card.bank { border-color: #ffb74d; background-color: #fff3e0; color: #e65100; }
-        #result-card.success { border-color: #81c784; background-color: #e8f5e9; color: #1b5e20; }
-
-        /* Write View */
+        .action-btn:disabled { opacity: 0.5; }
         .input-group { margin-bottom: 1rem; }
-        .input-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #616161; }
+        .input-group label { display: block; margin-bottom: 0.3rem; font-size: 0.85rem; }
         .input-group input, .input-group select {
-            width: 100%; padding: 0.8rem; border: 1px solid #bdbdbd; border-radius: 6px; font-size: 1rem;
+            width: 100%; padding: 0.7rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem;
+            background-color: var(--bg-color); color: var(--text-color);
         }
-        #write-status { text-align: center; font-size: 0.9rem; margin-top: 1rem; color: #212121; font-weight: bold; }
 
-        /* Admin View */
+        #result-card {
+            background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 1.2rem; text-align: start; white-space: pre-wrap; word-break: break-word;
+            font-size: 0.9rem; min-height: 80px; margin-bottom: 1rem;
+        }
+        #result-card.error { background-color: var(--error-bg); color: var(--error-text); border-color: var(--error); }
+        #result-card.bank { background-color: var(--bank-bg); color: var(--bank-text); border-color: var(--bank); }
+        #result-card.success { background-color: var(--success-bg); color: var(--success-text); border-color: var(--success); }
+
+        /* Admin Table & Chart */
         .admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.8rem; }
-        .admin-table th, .admin-table td { border: 1px solid #e0e0e0; padding: 0.5rem; text-align: left; }
-        .admin-table th { background-color: #f5f5f5; font-weight: bold; }
+        .admin-table th, .admin-table td { border: 1px solid var(--border-color); padding: 0.5rem; text-align: start; }
+        .admin-table th { background-color: var(--bg-color); }
+        .chart-container { width: 100%; max-width: 300px; margin: 20px auto; }
+        .delete-btn { background: var(--error); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;}
 
-        .warning { font-size: 0.8rem; color: #757575; text-align: center; margin-top: 1rem; padding: 0.5rem; border-top: 1px solid #e0e0e0; }
+        /* Toast */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            text-align: center; border-radius: 8px; padding: 16px; position: fixed;
+            z-index: 10000; left: 50%; bottom: 30px; transform: translateX(-50%);
+            font-size: 0.9rem; opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        .warning { font-size: 0.8rem; color: #757575; text-align: center; margin-top: 1rem; padding: 0.5rem; border-top: 1px solid var(--border-color); }
         .footer { margin-top: auto; padding-top: 2rem; text-align: center; font-size: 0.8rem; color: #9e9e9e; }
-        .footer strong { color: #616161; }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
-    <!-- Loader -->
     <div id="loader">
         <div class="spinner"></div>
         <h2>TRL TEAM FOR DEVELOPMENT</h2>
         <p>for leader Taimdev9</p>
     </div>
 
-    <!-- Main Container -->
+    <div id="toast">Notification</div>
+
     <div class="container" id="main-container">
-        <!-- Top Bar (Tabs & Language) -->
         <div class="top-bar" id="top-bar">
             <div class="tabs" id="tabs-container">
                 <button class="tab-btn active" data-target="read-view" data-i18n="tabRead">Read</button>
                 <button class="tab-btn" data-target="write-view" data-i18n="tabWrite">Write</button>
             </div>
-            <button id="lang-btn">العربية</button>
+            <div>
+                <button class="icon-btn" id="theme-toggle">🌙</button>
+                <button class="icon-btn" id="lang-btn">العربية</button>
+            </div>
         </div>
 
         <!-- Read View -->
         <div id="read-view" class="view-section active">
             <h1 data-i18n="titleRead">NFC Reader</h1>
-            <p class="subtitle" data-i18n="subRead">Press the button and touch an NFC tag</p>
-            <button id="scan-btn" data-i18n="btnScan">Start Scan</button>
+            <p class="subtitle" data-i18n="subRead">Continuous scanning enabled</p>
+            <button id="scan-btn" class="action-btn" data-i18n="btnScan">Start Continuous Scan</button>
             <div id="status" data-i18n="statusReady">Ready to scan</div>
             <div id="result-card" data-i18n="resultInit">Results will appear here...</div>
+            <div id="qr-container" style="text-align: center; margin-top: 10px;"></div>
         </div>
 
         <!-- Write View -->
         <div id="write-view" class="view-section">
             <h1 data-i18n="titleWrite">NFC Writer</h1>
-            <p class="subtitle" data-i18n="subWrite">Write a URL or Text to an empty tag</p>
+            <p class="subtitle" data-i18n="subWrite">Write to an empty tag</p>
             
             <div class="input-group">
                 <label data-i18n="labelType">Data Type</label>
                 <select id="write-type">
                     <option value="url" data-i18n="optUrl">URL (Link)</option>
                     <option value="text" data-i18n="optText">Text (Note)</option>
+                    <option value="vcard" data-i18n="optVcard">Contact (vCard)</option>
                 </select>
             </div>
-            <div class="input-group">
-                <label data-i18n="labelContent">Content</label>
-                <input type="text" id="write-data" placeholder="https://example.com">
+            
+            <div id="standard-inputs">
+                <div class="input-group">
+                    <label data-i18n="labelContent">Content</label>
+                    <input type="text" id="write-data" placeholder="https://example.com">
+                </div>
+            </div>
+
+            <div id="vcard-inputs" style="display:none;">
+                <div class="input-group"><label>Name</label><input type="text" id="v-name"></div>
+                <div class="input-group"><label>Phone</label><input type="tel" id="v-phone"></div>
+                <div class="input-group"><label>Email</label><input type="email" id="v-email"></div>
             </div>
             
-            <button id="write-btn" data-i18n="btnWrite">Write to Tag</button>
+            <button id="write-btn" class="action-btn" data-i18n="btnWrite">Write to Tag</button>
             <div id="write-status"></div>
         </div>
 
-        <!-- Admin View (Hidden by default, shown via JS) -->
+        <!-- Admin Dashboard -->
         <div id="admin-view" class="view-section">
-            <h1 data-i18n="titleAdmin">Admin Dashboard</h1>
+            <h1>Admin Dashboard</h1>
             
-            <div id="login-section">
-                <div class="input-group">
-                    <label data-i18n="labelPass">Enter Password</label>
-                    <input type="password" id="admin-pass" placeholder="******">
-                </div>
-                <button id="login-btn" class="tab-btn active" style="width: 100%; background: #212121; color: #fff;" data-i18n="btnLogin">Login</button>
+            <div id="login-section" style="text-align:center;">
+                <p style="margin-bottom: 15px;">Please login with your authorized account.</p>
+                <button id="google-login-btn" class="action-btn">Sign in with Google</button>
             </div>
             
             <div id="data-section" style="display: none;">
-                <button id="load-data-btn" class="tab-btn active" style="width: 100%; margin-bottom: 1rem; background: #212121; color: #fff;" data-i18n="btnLoad">Load Data from Cloud</button>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <button id="load-data-btn" class="tab-btn active">Load Data</button>
+                    <button id="export-btn" class="tab-btn">Export CSV</button>
+                    <button id="logout-btn" class="tab-btn" style="color:var(--error);">Logout</button>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                </div>
+
                 <div style="overflow-x: auto;">
                     <table class="admin-table" id="admin-table">
                         <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Type</th>
-                                <th>Serial</th>
-                                <th>Location</th>
-                            </tr>
+                            <tr><th>Time</th><th>Type</th><th>Serial</th><th>Action</th></tr>
                         </thead>
                         <tbody></tbody>
                     </table>
@@ -173,9 +204,7 @@
             </div>
         </div>
 
-        <div class="warning" id="warningText" data-i18n="warningText">
-            ⚠️ This site does not read sensitive bank card data.
-        </div>
+        <div class="warning" id="warningText" data-i18n="warningText">⚠️ This site does not read sensitive bank card data.</div>
     </div>
 
     <div class="footer">
@@ -186,9 +215,9 @@
     <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-        // إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBFgpDe5Lqe_DP-JV8UkcfjLIWr6KtaB4",
             authDomain: "nfc-scanner-app-72139.firebaseapp.com",
@@ -197,65 +226,49 @@
             messagingSenderId: "117435107622",
             appId: "1:117435107622:web:981b185e75206f889099e7"
         };
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        const ALLOWED_EMAIL = "taymabdrabo723@gmail.com";
 
-        // الترجمات
+        // Translations
         const translations = {
-            en: {
-                langBtn: "العربية", tabRead: "Read", tabWrite: "Write",
-                titleRead: "NFC Reader", subRead: "Press the button and touch an NFC tag",
-                btnScan: "Start Scan", statusReady: "Ready to scan", statusScanning: "✅ Scanning...",
-                statusSuccess: "Read successfully.", statusError: "Error occurred.", resultInit: "Results will appear here...",
-                warningText: "⚠️ This site does not read sensitive bank card data.",
-                titleWrite: "NFC Writer", subWrite: "Write a URL or Text to an empty tag",
-                labelType: "Data Type", optUrl: "URL (Link)", optText: "Text (Note)", labelContent: "Content", btnWrite: "Write to Tag",
-                writeSuccess: "✅ Written successfully!", writeError: "❌ Write failed: ",
-                titleAdmin: "Admin Dashboard", labelPass: "Enter Password", btnLogin: "Login", btnLoad: "Load Data from Cloud",
-                passError: "❌ Incorrect Password", loading: "Loading...",
-                browserNotSupported: "Browser does not support Web NFC.",
-                readSuccess: "NFC tag detected\nSerial Number: ", typeLabel: "Record Type: ",
-                url: "🔗 URL: ", text: "📝 Text: ", noNdef: "🔍 No valid NDEF data found.\n",
-                likelyBank: "💳 Likely a bank card or unsupported tag.\n", errorRead: "❌ Failed to read tag."
-            },
-            ar: {
-                langBtn: "English", tabRead: "قراءة", tabWrite: "كتابة",
-                titleRead: "قارئ NFC", subRead: "اضغط على الزر وقم بلمس علامة NFC",
-                btnScan: "بدء المسح", statusReady: "جاهز للمسح", statusScanning: "✅ جاري المسح...",
-                statusSuccess: "تمت القراءة بنجاح.", statusError: "حدث خطأ.", resultInit: "ستظهر النتائج هنا...",
-                warningText: "⚠️ هذا الموقع لا يقرأ بيانات البطاقات البنكية الحساسة.",
-                titleWrite: "كاتب NFC", subWrite: "اكتب رابطاً أو نصاً على علامة فارغة",
-                labelType: "نوع البيانات", optUrl: "رابط (URL)", optText: "نص (ملاحظة)", labelContent: "المحتوى", btnWrite: "الكتابة على العلامة",
-                writeSuccess: "✅ تمت الكتابة بنجاح!", writeError: "❌ فشلت الكتابة: ",
-                titleAdmin: "لوحة التحكم", labelPass: "أدخل كلمة المرور", btnLogin: "تسجيل الدخول", btnLoad: "جلب البيانات من السحابة",
-                passError: "❌ كلمة المرور غير صحيحة", loading: "جاري التحميل...",
-                browserNotSupported: "متصفحك لا يدعم Web NFC.",
-                readSuccess: "تم اكتشاف علامة NFC\nالرقم التسلسلي: ", typeLabel: "نوع السجل: ",
-                url: "🔗 رابط: ", text: "📝 نص: ", noNdef: "🔍 لم يتم العثور على بيانات NDEF.\n",
-                likelyBank: "💳 من المحتمل أن تكون بطاقة بنك أو غير مدعومة.\n", errorRead: "❌ فشلت قراءة العلامة."
-            }
+            en: { tabRead: "Read", tabWrite: "Write", titleRead: "NFC Reader", subRead: "Continuous scanning enabled", btnScan: "Start Continuous Scan", statusReady: "Ready", titleWrite: "NFC Writer", subWrite: "Write to an empty tag", labelType: "Data Type", optUrl: "URL (Link)", optText: "Text (Note)", optVcard: "Contact (vCard)", labelContent: "Content", btnWrite: "Write to Tag", warningText: "⚠️ This site does not read sensitive bank card data." },
+            ar: { tabRead: "قراءة", tabWrite: "كتابة", titleRead: "قارئ NFC", subRead: "القراءة المستمرة مفعلة", btnScan: "بدء المسح المستمر", statusReady: "جاهز", titleWrite: "كاتب NFC", subWrite: "الكتابة على علامة فارغة", labelType: "نوع البيانات", optUrl: "رابط (URL)", optText: "نص", optVcard: "جهة اتصال (vCard)", labelContent: "المحتوى", btnWrite: "الكتابة على العلامة", warningText: "⚠️ هذا الموقع لا يقرأ بيانات البطاقات البنكية." }
         };
-
+        
         let currentLang = 'en';
         const t = () => translations[currentLang];
 
-        // --- تحديث اللغة ---
-        function updateLanguage(lang) {
-            currentLang = lang;
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        // --- UI Logic ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', (e) => {
+            const body = document.body;
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            e.target.textContent = isDark ? '🌙' : '☀️';
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#f5f5f5' : '#121212');
+        });
+
+        document.getElementById('lang-btn').addEventListener('click', () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (t()[key]) el.textContent = t()[key];
             });
-            document.getElementById('lang-btn').textContent = t().langBtn;
-        }
-
-        document.getElementById('lang-btn').addEventListener('click', () => {
-            updateLanguage(currentLang === 'en' ? 'ar' : 'en');
+            document.getElementById('lang-btn').textContent = currentLang === 'en' ? 'العربية' : 'English';
         });
 
-        // --- التبويبات (Tabs) ---
         document.querySelectorAll('.tab-btn[data-target]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.tab-btn[data-target]').forEach(b => b.classList.remove('active'));
@@ -265,13 +278,23 @@
             });
         });
 
-        // --- الصوت والاهتزاز ---
+        // Write View Logic (Switch vCard inputs)
+        document.getElementById('write-type').addEventListener('change', (e) => {
+            if (e.target.value === 'vcard') {
+                document.getElementById('standard-inputs').style.display = 'none';
+                document.getElementById('vcard-inputs').style.display = 'block';
+            } else {
+                document.getElementById('standard-inputs').style.display = 'block';
+                document.getElementById('vcard-inputs').style.display = 'none';
+            }
+        });
+
+        // --- NFC Logic ---
         function playFeedback() {
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+                const osc = ctx.createOscillator(); const gain = ctx.createGain();
                 osc.connect(gain); gain.connect(ctx.destination);
                 osc.type = "sine"; osc.frequency.value = 800;
                 gain.gain.setValueAtTime(0.5, ctx.currentTime);
@@ -280,181 +303,226 @@
             } catch(e) {}
         }
 
-        // --- الموقع الجغرافي ---
-        function getLocation() {
+        async function getLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) return resolve({lat: null, lng: null});
                 navigator.geolocation.getCurrentPosition(
                     (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-                    () => resolve({lat: null, lng: null}),
-                    { timeout: 5000 }
+                    () => resolve({lat: null, lng: null}), { timeout: 5000 }
                 );
             });
         }
 
-        // --- حفظ في Firebase ---
         async function logScanToFirebase(data) {
             const loc = await getLocation();
             try {
-                await addDoc(collection(db, "nfc_scans"), {
-                    ...data,
-                    location: loc,
-                    timestamp: new Date().toISOString()
-                });
+                await addDoc(collection(db, "nfc_scans"), { ...data, location: loc, timestamp: new Date().toISOString() });
+                showToast("✅ Scan logged successfully!");
             } catch (e) { console.error("Firebase Error:", e); }
         }
 
-        // --- نظام القراءة ---
+        // Continuous Scan Reader
+        let isScanning = false;
         const scanBtn = document.getElementById('scan-btn');
-        const statusDiv = document.getElementById('status');
         const resultCard = document.getElementById('result-card');
+        const qrContainer = document.getElementById('qr-container');
 
         if (!("NDEFReader" in window)) {
-            statusDiv.textContent = t().browserNotSupported;
             scanBtn.disabled = true;
+            resultCard.textContent = "Web NFC not supported.";
         } else {
             scanBtn.addEventListener('click', async () => {
+                if (isScanning) return;
                 try {
                     const ndef = new NDEFReader();
                     await ndef.scan();
-                    statusDiv.textContent = t().statusScanning;
-                    scanBtn.disabled = true;
-                    resultCard.textContent = "Waiting...";
-
+                    isScanning = true;
+                    scanBtn.textContent = "Scanning... (Tap tag)";
+                    document.getElementById('status').textContent = "Listening for NFC tags...";
+                    
                     ndef.addEventListener("reading", async ({ message, serialNumber }) => {
                         playFeedback();
-                        let output = t().readSuccess + `${serialNumber}\n\n`;
+                        qrContainer.innerHTML = "";
+                        let output = `Serial: ${serialNumber}\n\n`;
                         let isBank = false, hasNDEF = false, recordsData = [];
 
                         for (const record of message.records) {
                             hasNDEF = true;
-                            output += t().typeLabel + `${record.recordType}\n`;
                             let dataStr = "";
                             try {
                                 if (record.recordType === "url") {
                                     dataStr = new TextDecoder(record.encoding).decode(record.data);
-                                    output += t().url + dataStr + "\n";
+                                    output += `🔗 URL: ${dataStr}\n`;
+                                    // Generate QR Code for URL
+                                    new QRCode(qrContainer, { text: dataStr, width: 128, height: 128 });
                                 } else if (record.recordType === "text") {
                                     dataStr = new TextDecoder(record.encoding).decode(record.data);
-                                    output += t().text + dataStr + "\n";
+                                    output += `📝 Text: ${dataStr}\n`;
                                 }
                                 recordsData.push({type: record.recordType, content: dataStr});
                             } catch(e) {}
-                            output += "---\n";
                         }
 
-                        if (!hasNDEF) { isBank = true; output += t().noNdef + t().likelyBank; }
+                        if (!hasNDEF) { isBank = true; output += "💳 Bank/Unsupported Card detected."; }
 
                         logScanToFirebase({
                             serialNumber: serialNumber || "Unknown",
                             cardType: isBank ? "Bank/Unsupported" : "NDEF Tag",
-                            records: recordsData, rawOutput: output, languageUsed: currentLang
+                            records: recordsData, rawOutput: output
                         });
 
                         resultCard.textContent = output;
                         resultCard.className = isBank ? 'bank' : 'success';
-                        statusDiv.textContent = t().statusSuccess;
-                        scanBtn.disabled = false;
                     });
 
                     ndef.addEventListener("readingerror", () => {
                         playFeedback();
-                        resultCard.textContent = t().errorRead;
+                        resultCard.textContent = "❌ Read error. Bank card or unformatted tag.";
                         resultCard.className = 'bank';
-                        statusDiv.textContent = t().statusError;
-                        scanBtn.disabled = false;
-                        logScanToFirebase({serialNumber: "Blocked", cardType: "Bank/Unsupported", records: [], rawOutput: t().errorRead, languageUsed: currentLang});
                     });
                 } catch (e) {
-                    statusDiv.textContent = "Error: " + e;
-                    scanBtn.disabled = false;
+                    showToast("Error: " + e);
                 }
             });
         }
 
-        // --- نظام الكتابة ---
-        const writeBtn = document.getElementById('write-btn');
-        const writeStatus = document.getElementById('write-status');
-
-        writeBtn.addEventListener('click', async () => {
+        // Writer Logic
+        document.getElementById('write-btn').addEventListener('click', async (e) => {
+            if (e.target.disabled) return;
             const type = document.getElementById('write-type').value;
-            const data = document.getElementById('write-data').value;
+            let data = "";
 
-            if (!data) { writeStatus.textContent = "Please enter data!"; return; }
+            if (type === 'vcard') {
+                const name = document.getElementById('v-name').value;
+                const phone = document.getElementById('v-phone').value;
+                const email = document.getElementById('v-email').value;
+                if(!name) return showToast("Enter name for vCard");
+                data = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
+            } else {
+                data = document.getElementById('write-data').value;
+                if (!data) return showToast("Please enter content!");
+            }
 
+            e.target.disabled = true;
+            document.getElementById('write-status').textContent = "Writing... hold tag near phone.";
+            
             try {
                 const ndef = new NDEFReader();
-                await ndef.write({
-                    records: [{ recordType: type, data: data }]
-                });
+                // If vCard, we use mime type text/vcard
+                if(type === 'vcard') {
+                     await ndef.write({ records: [{ recordType: "mime", mediaType: "text/vcard", data: new TextEncoder().encode(data) }] });
+                } else {
+                     await ndef.write({ records: [{ recordType: type, data: data }] });
+                }
                 playFeedback();
-                writeStatus.textContent = t().writeSuccess;
-                writeStatus.style.color = "#1b5e20";
-            } catch (e) {
-                writeStatus.textContent = t().writeError + e;
-                writeStatus.style.color = "#b71c1c";
+                showToast("✅ Write Successful!");
+                document.getElementById('write-status').textContent = "";
+            } catch (err) {
+                showToast("❌ Write failed: " + err.name);
+            } finally {
+                e.target.disabled = false;
             }
         });
 
-        // --- لوحة التحكم (Admin Dashboard) ---
-        const adminPass = "Taimdev9"; // كلمة المرور السرية الخاصة بك
-        const loginBtn = document.getElementById('login-btn');
-        const loadDataBtn = document.getElementById('load-data-btn');
+        // --- Admin Dashboard Logic ---
+        let myChart = null;
+        const adminTableBody = document.querySelector('#admin-table tbody');
 
-        // التحقق من وجود ?admin=true في الرابط
         if (window.location.search.includes('admin=true')) {
-            
-            // إخفاء واجهة القراءة والكتابة والتبويبات
             document.getElementById('read-view').style.display = 'none';
             document.getElementById('write-view').style.display = 'none';
             document.getElementById('tabs-container').style.display = 'none';
             document.getElementById('warningText').style.display = 'none';
-            
-            // إظهار لوحة التحكم
             document.getElementById('admin-view').style.display = 'block';
-            
-            loginBtn.addEventListener('click', () => {
-                if (document.getElementById('admin-pass').value === adminPass) {
+
+            // Auth State
+            onAuthStateChanged(auth, (user) => {
+                if (user && user.email === ALLOWED_EMAIL) {
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('data-section').style.display = 'block';
                 } else {
-                    alert(t().passError);
+                    document.getElementById('login-section').style.display = 'block';
+                    document.getElementById('data-section').style.display = 'none';
                 }
             });
 
-            loadDataBtn.addEventListener('click', async () => {
-                const tbody = document.querySelector('#admin-table tbody');
-                tbody.innerHTML = `<tr><td colspan="4">${t().loading}</td></tr>`;
-                
+            document.getElementById('google-login-btn').addEventListener('click', () => {
+                signInWithPopup(auth, provider).catch(err => showToast("Login Failed: " + err.message));
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+            // Load Data & Chart
+            document.getElementById('load-data-btn').addEventListener('click', async () => {
+                adminTableBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
                 try {
                     const q = query(collection(db, "nfc_scans"), orderBy("timestamp", "desc"));
                     const snapshot = await getDocs(q);
-                    tbody.innerHTML = "";
-                    
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const date = new Date(data.timestamp).toLocaleString();
-                        const loc = data.location && data.location.lat ? `${data.location.lat.toFixed(2)}, ${data.location.lng.toFixed(2)}` : "N/A";
-                        
-                        tbody.innerHTML += `
+                    adminTableBody.innerHTML = "";
+                    let tagCount = 0, bankCount = 0;
+
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const id = docSnap.id;
+                        if(data.cardType === 'NDEF Tag') tagCount++; else bankCount++;
+
+                        adminTableBody.innerHTML += `
                             <tr>
-                                <td>${date}</td>
+                                <td>${new Date(data.timestamp).toLocaleString()}</td>
                                 <td>${data.cardType}</td>
                                 <td>${data.serialNumber}</td>
-                                <td>${loc}</td>
+                                <td><button class="delete-btn" onclick="window.deleteLog('${id}')">Del</button></td>
                             </tr>
                         `;
                     });
+
+                    // Render Chart
+                    if(myChart) myChart.destroy();
+                    myChart = new Chart(document.getElementById('myChart'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['NDEF Tags', 'Bank/Unsupported'],
+                            datasets: [{ data: [tagCount, bankCount], backgroundColor: ['#81c784', '#ffb74d'] }]
+                        }
+                    });
+
                 } catch(e) {
-                    console.error(e);
-                    tbody.innerHTML = `<tr><td colspan="4">Error loading data. Check Rules.</td></tr>`;
+                    adminTableBody.innerHTML = `<tr><td colspan="4">Error: Check rules and auth.</td></tr>`;
                 }
+            });
+
+            // Delete Log
+            window.deleteLog = async (id) => {
+                if(confirm("Delete this record?")) {
+                    await deleteDoc(doc(db, "nfc_scans", id));
+                    showToast("Deleted!");
+                    document.getElementById('load-data-btn').click(); // Reload
+                }
+            };
+
+            // Export to CSV
+            document.getElementById('export-btn').addEventListener('click', async () => {
+                const q = query(collection(db, "nfc_scans"), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
+                let csv = "Timestamp,Type,Serial,Lat,Lng\n";
+                snapshot.forEach(d => {
+                    const data = d.data();
+                    csv += `"${data.timestamp}","${data.cardType}","${data.serialNumber}","${data.location?.lat||''}","${data.location?.lng||''}"\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'nfc_data.csv'; a.click();
             });
         }
 
-        // --- إخفاء شاشة التحميل ---
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
+        }
+
         window.addEventListener('load', () => {
-            setTimeout(() => { document.getElementById('loader').classList.add('hidden'); }, 1500);
+            setTimeout(() => { document.getElementById('loader').classList.add('hidden'); }, 1000);
         });
     </script>
 </body>
