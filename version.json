@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "date": "2026-10-29",
+  "changes": {
+    "en": [
+      "Added interactive Map for scan locations.",
+      "Added Live Updates for the dashboard.",
+      "Added Wi-Fi, vCard, and App Launch writing options.",
+      "Replaced emojis with professional SVG icons.",
+      "Added Text-to-Speech for scanned tags.",
+      "Added capacity check before writing."
+    ],
+    "ar": [
+      "إضافة خريطة تفاعلية لتتبع أماكن المسح.",
+      "إضافة التحديث التلقائي الفوري للوحة التحكم.",
+      "إضافة خيارات لكتابة شبكة الواي فاي، جهات الاتصال، وفتح التطبيقات.",
+      "استبدال الإيموجيز بأيقونات SVG احترافية.",
+      "إضافة ميزة القراءة الصوتية (النطق) للنتائج.",
+      "إضافة فحص لسعة البطاقة قبل الكتابة."
+    ]
+  }
+}
